@@ -1,8 +1,10 @@
 
-SDN-Aware Resilient Distributed Backup System
+**SDN-Aware Resilient Distributed Backup System**
+
 Chunked TCP backups that survive server crashes, frozen servers, cut cables and failed links. A POX SDN controller picks and repairs network paths; a standby server takes over automatically 
 ________________________________________
-Table of contents
+
+**Table of contents**
 1.	Overview
 2.	Highlights
 3.	Architecture
@@ -19,35 +21,47 @@ Table of contents
 14.	Design decisions, limitations and future work
 15.	Team
 ________________________________________
-1. Overview
-Problem. A client must back up files to remote servers over TCP. Servers crash, cables are cut and links fail. A simple backup tool then stops halfway, and nobody knows whether the data on the server is intact.
-Our solution. The file is split into chunks and sent over TCP to a primary server (h3) that copies every chunk to a standby server (h2) before acknowledging it. Every chunk carries a SHA-256. The network is a Mininet topology with two paths between the client and the primary, managed by a POX SDN controller that routes traffic by link utilisation and repairs paths when a link fails. If anything breaks, the client switches to the standby on its own, re-sends only what was lost, and at the end verifies every chunk against what the servers really hold.
-Course project, Computer Networks (SDN). Problem statement:
- Distributed Backup System: clients transfer files to backup servers through TCP; SDN dynamically selects suitable paths and supports recovery during failures.
-Basic backup tool	This project
-One server, one path	Primary + standby server, two network paths
+**1. Overview**
+
+**Problem.**
+A client must back up files to remote servers over TCP. Servers crash, cables are cut and links fail. A simple backup tool then stops halfway, and nobody knows whether the data on the server is intact.
+
+**Our solution.**
+The file is split into chunks and sent over TCP to a primary server (h3) that copies every chunk to a standby server (h2) before acknowledging it. Every chunk carries a SHA-256. The network is a Mininet topology with two paths between the client and the primary, managed by a POX SDN controller that routes traffic by link utilisation and repairs paths when a link fails. If anything breaks, the client switches to the standby on its own, re-sends only what was lost, and at the end verifies every chunk against what the servers really hold.
+
+**Course project, Computer Networks (SDN). Problem statement:**
+
+ **Distributed Backup System: clients transfer files to backup servers through TCP; SDN dynamically selects suitable paths and supports recovery during failures.**
+ 
+Basic backup tool	                     This project
+One server, one path	        Primary + standby server, two network paths
 A failure stops the transfer	Automatic failover to the standby; only lost chunks are re-sent
-Restart from zero after an interruption	Resume: only missing chunks are sent
-"Done" with no proof	Per-chunk SHA-256, then Checksum Verified against the servers
-Static routing	SDN controller routes by utilisation and reroutes on failure
-Black box	Live dashboard: one tile per chunk, servers, topology, throughput, event log
+Restart from zero after an 
+interruption	                Resume: only missing chunks are sent
+"Done" with no proof	        Per-chunk SHA-256, then Checksum Verified against the servers
+Static routing	                SDN controller routes by utilisation and reroutes on failure
+Black box	                    Live dashboard: one tile per chunk, servers, topology, throughput,                                  event log
+
 ________________________________________
-2. Highlights
+**2. Highlights**
 	
-Automatic failover h3 to h2	Detected by heartbeat, by connection errors, and by the controller reporting "no path". Stuck chunks are aborted and re-sent.
-Natural failures, not only Kill	h3 crashes by itself, h3 freezes (hangs), h3 cable cut, both paths cut. Kill h3 stays as the challenging scenario.
-Interrupt and Resume	Stop a transfer halfway and continue later; only missing chunks are sent.
-Integrity you can see	TRANSFER COMPLETE / Integrity: Checksum Verified / Time Taken / Throughput in Mininet and in the dashboard.
-App and SDN talk to each other	The client asks the controller over a UNIX socket for the path and reachability of each server.
-Any file, including video	Chunked as raw bytes; the restored video keeps its extension and plays.
-Dashboard	One tile per chunk with hover details, PRIMARY / STANDBY status, live topology, throughput chart, event log.
-CSV export	Results, events and the chunk map, ready for graphs in the report.
+Automatic failover h3 to h2	     Detected by heartbeat, by connection errors, and by the  
+                                 controller  reporting "no path". Stuck chunks are aborted and re-                                   sent.
+Natural failures, not only Kill	 h3 crashes by itself, h3 freezes (hangs), h3 cable cut, both paths                                  cut. Kill h3 stays as the challenging scenario.
+Interrupt and Resume	         Stop a transfer halfway and continue later; only missing chunks                                     are sent.
+Integrity you can see	         TRANSFER COMPLETE / Integrity: Checksum Verified / Time Taken /                                     Throughput in Mininet and in the dashboard.
+App and SDN talk to each other	 The client asks the controller over a UNIX socket for the path and                                  reachability of each server.
+Any file, including video	     Chunked as raw bytes; the restored video keeps its extension and                                    plays.
+Dashboard	                     One tile per chunk with hover details, PRIMARY / STANDBY status,                                    live topology, throughput chart, event log.
+CSV export	                     Results, events and the chunk map, ready for graphs in the report.
 ________________________________________
-3. Architecture
+
+**3. Architecture**
 Architecture
-Component	File	Runs on	Job
-Backup client	backup/client.py	Mininet host h1	Chunk, send in parallel, detect failures, fail over, resume, verify, restore
-Backup server	backup/server.py	h3 (primary) and h2 (standby)	Verify and store chunks, replicate to the partner, re-sync after a restart
+Component        	File	              Runs on	                           Job
+Backup client	  backup/client.py  	Mininet host h1	      Chunk, send in parallel, detect                                                                     failures, fail over, resume, verify,                                                                restore
+Backup server	  backup/server.py	    h3 (primary) and      Verify and store chunks, replicate 
+                                        h2 (standby)	      to the partner, re-sync after a                                                                     restart
 SDN controller	controller/multipath_controller.py	POX (OpenFlow 1.0)	Discover links, compute and install paths, reroute, answer path queries
 Topology	topology/topology.py	Mininet	4 switches, 3 hosts, link bandwidth and delay, failure injection, result box
 Dashboard	dashboard/app.py, model.py	Ubuntu desktop	Visualise everything, send commands
