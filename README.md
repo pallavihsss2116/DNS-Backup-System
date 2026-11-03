@@ -75,30 +75,8 @@ Topology. h1 is the client (10.0.0.1), h3 the primary (10.0.0.3), h2 the standby
               h2              (standby)
 Full design document: docs/ARCHITECTURE.md.
 ________________________________________
-4. How it works
-sequenceDiagram
-  participant C as h1 Client
-  participant P as h3 Primary
-  participant S as h2 Standby
-  participant X as POX controller
-  C->>X: reach(h3, h2)?
-  X-->>C: path s1-s2-s4, no congestion
-  loop for every chunk
-    C->>P: PUT chunk + SHA-256
-    P->>P: verify hash, store
-    P->>S: replicate chunk
-    S-->>P: ok
-    P-->>C: ACK (replicated)
-  end
-  Note over P: h3 fails (kill, crash, freeze or cable cut)
-  C->>P: PUT chunk
-  P--xC: connection reset or no answer
-  C->>C: heartbeat lost, mark h3 DOWN, abort in-flight
-  C->>S: PUT chunk (retry)
-  S-->>C: ACK
-  C->>S: LIST chunks
-  S-->>C: SHA-256 of every stored chunk
-  C->>C: compare with source: Checksum Verified
+
+**4. How it works**
 1.	Chunk. The file is cut into fixed-size chunks (128 KB to 1 MB) and each gets a SHA-256. file_id is the first 16 hex characters of the whole-file SHA-256.
 2.	Send. Worker threads send chunks in parallel over TCP. The primary recomputes the hash; a mismatch is rejected and the client retries.
 3.	Replicate. The primary stores the chunk, copies it to the standby, and only then acknowledges. An acknowledged chunk therefore survives the loss of the primary.
@@ -118,22 +96,8 @@ When a transfer ends, the Mininet terminal prints:
  Resumed:     22 chunks were already safe on the servers, only 26 chunks (3.25 MB) sent now
 ==================================================================
 ________________________________________
-5. Failure handling
-flowchart TD
-  A[Sending a chunk to the active server] --> B{Reply in time?}
-  B -- yes --> C{Hash accepted?}
-  C -- yes --> D[Chunk stored and replicated]
-  C -- no --> A
-  B -- no or connection error --> E[Mark server DOWN]
-  F[Heartbeat: 3 pings missed] --> E
-  G[Controller says: no path to server] --> E
-  E --> H[Abort in-flight sockets to that server]
-  H --> I[Retry the chunk on the standby]
-  I --> A
-  D --> J{More chunks?}
-  J -- yes --> A
-  J -- no --> K[Ask servers for SHA-256 of every chunk]
-  K --> L[Checksum Verified]
+**5. Failure handling**
+
 Failure	How it is detected	What happens
 h3 killed or crashed	Connection refused or reset	h3 marked DOWN, chunk retried on h2
 h3 frozen (alive but silent)	3 missed heartbeats (0.5 s apart)	h3 marked DOWN, in-flight sockets aborted so chunks are not stuck for the full timeout, retried on h2
