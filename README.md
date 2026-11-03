@@ -19,7 +19,7 @@ ________________________________________
 12.	Project structure
 13.	Testing
 14.	Design decisions, limitations and future work
-15.	Team
+15.	Team and contrubutions
 ________________________________________
 **1. Overview**
 
@@ -197,6 +197,7 @@ Quick demo without Mininet (two servers on one machine, primary killed mid-backu
 python3 local_demo.py
 Command-line equivalents from the Mininet prompt: h1 python3 backup/client.py backup FILE --servers h3=10.0.0.3:9000,h2=10.0.0.2:9000, h1 python3 backup/client.py restore FILE_ID OUT --servers ..., link s1 s2 down, iperf.
 ________________________________________
+
 **10. Demo scenarios**
 Scenario                                  	How                                    	Expected result
 Normal backup	                           Backup	                            Tiles turn teal; box says Checksum Verified
@@ -210,7 +211,7 @@ Interrupted transfer	               Interrupt, then Resume	                Only 
 Restore            					   Restore, then Play restored	 			Whole-file SHA-256 matches; the video plays
 ________________________________________
 
-**12. Results and evaluation**
+**11. Results and evaluation**
 Measured results on the Mininet topology (throughput, failover time, reroute time, chunks re-sent, comparisons) are in docs/RESULTS.md, exported with the dashboard's Export CSV buttons.
 Automated test runs on one machine (loopback, no bandwidth limits, so these show behaviour and not network speed):
 
@@ -224,7 +225,7 @@ Controller says "no path to h3" while h3 is alive	Client fails over to h2 withou
 Corrupted chunk                            		Rejected by the server, never stored
 ________________________________________
 
-**13. Project structure**
+**12. Project structure**
 
 sdn-backup/
 ├── backup/
@@ -246,14 +247,14 @@ sdn-backup/
 └── README.md
 ________________________________________
 
-**14. Testing**
+**13. Testing**
 python3 tests/test_core.py              # backup, resume, checksum rejection, outage recovery, controller-socket failover,
                                         # h3 crashes by itself, h3 freezes (local servers, no Mininet)
 python3 tests/test_controller_logic.py  # controller routing, reroute, congestion, socket API (POX API stubbed)
 python3 tests/test_model.py FILE        # dashboard model, replaying an event file
 ________________________________________
 
-**15. Design decisions, limitations and future work**
+**14. Design decisions, limitations and future work**
 
 Design decision                                                            	Reason
 Primary replicates to standby before ACK	            An acknowledged chunk survives the loss of the primary
@@ -274,10 +275,24 @@ UNIX socket for the controller API						Works from inside a Mininet host with no
 **Future work:**
 virtual-IP failover handled entirely by the controller, QoS for backup traffic, encryption per chunk, de-duplication by chunk hash, more than two servers with a configurable replication factor.
 ________________________________________
-**16. Team members** 
-PALLAVI H S 	
-PRAKRUTHI R 	
-NARUN PATIL  	
+
+**15. Team members and Contributions**
+CONTRIBUTIONS.md
+
+PALLAVI  H S
+- Backup client implementation
+- Chunking and resume functionality
+- Testing and documentation
+
+PRAKRUTHI R
+- Dashboard development
+- Visualization and CSV export
+- UI testing
+
+NARUN PATIL
+- SDN controller implementation
+- Mininet topology setup
+- Failure recovery mechanisms
 
 
 
