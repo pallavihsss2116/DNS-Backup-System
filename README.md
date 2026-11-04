@@ -78,7 +78,7 @@ h1 is the client (10.0.0.1), h3 the primary (10.0.0.3), h2 the standby (10.0.0.2
               s3
               |
               h2              (standby)
-Full design document: docs/ARCHITECTURE.md.
+Full design image:architecture.png
 ________________________________________
 
 **4. How it works**
