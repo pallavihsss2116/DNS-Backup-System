@@ -28,36 +28,32 @@ class App:
         self.peer_name = peer_name
         self.delay = delay
         self.sha_cache = {}
-        self.crash_left = None
         self.peer_down_until = 0.0   # circuit breaker: skip replication while the partner is unresponsive
-        self.crash_lock = threading.Lock()
         os.makedirs(data_dir, exist_ok=True)
 
     # ---- spontaneous failure (for the demo) --------------------------------
-    # Writing a number N into <crash dir>/crash_<name> arms the server: it crashes BY ITSELF while
-    # handling its Nth chunk (no kill command, no goodbye, the client just sees the connection drop).
+    # Writing a chunk number N into <crash dir>/crash_<name> arms the server: it crashes BY ITSELF
+    # the moment chunk N (the tile "CHUNK 00N" in the dashboard) arrives. Chunks before N are stored.
+    # No kill command, no goodbye: the client just sees the connection drop.
     def _crash_file(self):
         return os.path.join(os.environ.get("SDNB_CRASH_DIR", "/tmp/sdnbackup"), "crash_%s" % self.name)
 
-    def maybe_crash(self):
+    def maybe_crash(self, idx):
         f = self._crash_file()
-        if not os.path.exists(f):
+        if not os.path.exists(f) or not isinstance(idx, int):
             return
-        with self.crash_lock:
-            if self.crash_left is None:
-                try:
-                    self.crash_left = max(1, int(open(f).read().strip() or "5"))
-                except (OSError, ValueError):
-                    self.crash_left = 5
-            self.crash_left -= 1
-            die = self.crash_left <= 0
-        if die:
-            try:
-                os.remove(f)
-            except OSError:
-                pass
-            emit("server_state", server=self.name, state="down", reason="crashed by itself")
-            os._exit(1)
+        try:
+            at = max(0, int(open(f).read().strip()))
+        except (OSError, ValueError):
+            return
+        if idx < at:
+            return
+        try:
+            os.remove(f)
+        except OSError:
+            pass
+        emit("server_state", server=self.name, state="down", reason="crashed by itself at chunk %d" % idx)
+        os._exit(1)
 
     # ---- storage ---------------------------------------------------------
     def _path(self, fid, idx):
@@ -118,7 +114,7 @@ class App:
         return {"ok": False, "err": "unknown op"}, b""
 
     def _put(self, h, body):
-        self.maybe_crash()
+        self.maybe_crash(h.get("idx"))
         fid, idx = h.get("file_id"), h.get("idx")
         if not self._valid_id(fid) or not isinstance(idx, int) or idx < 0:
             return {"ok": False, "err": "bad header"}
