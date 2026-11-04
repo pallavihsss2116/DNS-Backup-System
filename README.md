@@ -108,7 +108,9 @@ ________________________________________
  Failover:    none needed
  Resumed:     22 chunks were already safe on the servers, only 26 chunks (3.25 MB) sent now
 ==================================================================
-________________________________________
+_______________________________________
+## Project screenshots
+![Project output](output.png)
 
 **5. Failure handling**
 
