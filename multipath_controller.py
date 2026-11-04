@@ -296,7 +296,7 @@ class SDNBackup(object):
                 log.info("congestion reroute %s -> %s", f["path"], alt)
                 self._drop_flows(lambda p, old=f["path"]: p == old, "congestion")
 
-    def _install(self, src, dst, path):
+    def _install(self, src, dst, path, announce=True):
         """Install src->dst and dst->src along `path` (list of dpids)."""
         for s, d, p in ((src, dst, path), (dst, src, list(reversed(path)))):
             matches = []
@@ -317,7 +317,8 @@ class SDNBackup(object):
                 ms = int((time.time() - t0) * 1000)
                 emit("reroute_done", src=host_name(s), dst=host_name(d), path=p, ms=ms)
                 log.info("reroute %s->%s done in %d ms via %s", host_name(s), host_name(d), ms, p)
-        emit("path_installed", src=host_name(src), dst=host_name(dst), path=path)
+        if announce:
+            emit("path_installed", src=host_name(src), dst=host_name(dst), path=path)
 
     # ---- packets ---------------------------------------------------------------
     def _handle_PacketIn(self, event):
@@ -340,10 +341,21 @@ class SDNBackup(object):
             log.warning("no path %s -> %s", host_name(packet.src), host_name(packet.dst))
             return
         key = (packet.src, packet.dst)
-        if key not in self.flows or self.flows[key]["path"] != path:
-            self._install(packet.src, packet.dst, path)
-        # send the packet that triggered this on its way
-        out = d_loc[1] if len(path) == 1 else self.adj[path[0]][path[1]]
+        # A packet-in for a known pair means the switch has NO flow for it (idle timeout expired, or the
+        # flow-mod has not arrived yet). c.flows is only our own record and goes stale when switch entries
+        # expire, so ALWAYS (re)install; only announce the path when it is new or changed.
+        known = key in self.flows and self.flows[key]["path"] == path
+        self._install(packet.src, packet.dst, path, announce=not known)
+        # send the packet that triggered this on its way, out of the switch that RAISED it
+        here = event.dpid
+        if here in path:
+            i = path.index(here)
+            out = d_loc[1] if i == len(path) - 1 else self.adj[here][path[i + 1]]
+        else:
+            alt = self._shortest_path(here, d_loc[0])
+            if alt is None:
+                return
+            out = d_loc[1] if len(alt) == 1 else self.adj[here][alt[1]]
         msg = of.ofp_packet_out(data=event.ofp, in_port=in_port)
         msg.actions.append(of.ofp_action_output(port=out))
         event.connection.send(msg)
