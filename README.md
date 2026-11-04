@@ -127,7 +127,7 @@ Client interrupted or crashed                                           Stored c
 h3 restarts		                                                        Pulls the chunks it missed from h2 (re-sync)
 Partner unreachable	            Replication times out (2 s)          	Server stops trying for 3 s (circuit breaker) so the transfer is not slowed down
 ________________________________________
-![Project output](fail_over.jpg)
+![Project output](fail_over.jpeg)
 
 
 **6. The SDN controller**
