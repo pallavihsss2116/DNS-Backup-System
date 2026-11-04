@@ -5,7 +5,8 @@ Servers are given in priority order: the first is the primary (h3), the next
 is the standby (h2). The client always writes to the first server that is not
 marked DOWN. A server is marked DOWN by either
   * a failed request (connection refused / reset / timeout), or
-  * the heartbeat monitor missing --hb-miss pings in a row.
+  * (optional, off by default) the heartbeat monitor missing --hb-miss pings in a row.
+    A frozen server is then detected by the --put-timeout of the in-flight upload.
 Chunks that were in flight when the server died are retried on the standby.
 Because the primary replicates every chunk to the standby before ACKing,
 already-ACKed chunks are never lost.
@@ -72,13 +73,15 @@ class Server:
 
 
 class Backup:
-    def __init__(self, servers, workers=4, sticky=False, hb_interval=0.5, hb_miss=3, sdn=None):
+    def __init__(self, servers, workers=4, sticky=False, hb_interval=0.0, hb_miss=3, sdn=None,
+                 put_timeout=6.0):
         self.servers = [Server(n, a) for n, a in servers]
         self.workers = workers
         self.sticky = sticky            # keep promoted standby even if primary returns
         self.hb_interval = hb_interval
         self.hb_miss = hb_miss
         self.sdn = sdn
+        self.put_timeout = put_timeout   # a frozen server is detected by this timeout (no heartbeat)
         self.last_path = {}
         self.sdn_blocked = set()   # servers the controller says have no path
         self.inflight = {}         # server name -> sockets of requests in progress
@@ -251,7 +254,7 @@ class Backup:
             try:
                 resp, _ = self._request(s, {"op": "PUT", "file_id": fid, "idx": idx, "total": total,
                                             "size": size, "sha": sha, "replicate": True},
-                                        data, timeout=10)
+                                        data, timeout=self.put_timeout)
             except (OSError, ValueError) as e:
                 attempts += 1
                 self.mark_down(s, type(e).__name__)   # next pick_server() fails over
@@ -311,8 +314,8 @@ class Backup:
 
         if self.sdn:
             self._sdn_check()
-        hb = threading.Thread(target=self._heartbeat, daemon=True)
-        hb.start()
+        if self.hb_interval > 0:        # heartbeat monitor is optional (off by default)
+            threading.Thread(target=self._heartbeat, daemon=True).start()
 
         def work(idx):
             with open(path, "rb") as f:
@@ -447,7 +450,10 @@ def main():
                        help="priority order, e.g. h3=10.0.0.3:9000,h2=10.0.0.2:9000")
         p.add_argument("--workers", type=int, default=4)
         p.add_argument("--sticky", action="store_true", help="do not fail back to the primary")
-        p.add_argument("--hb-interval", type=float, default=0.5)
+        p.add_argument("--hb-interval", type=float, default=0.0,
+                       help="heartbeat ping interval in seconds; 0 = heartbeat disabled (default)")
+        p.add_argument("--put-timeout", type=float, default=6.0,
+                       help="seconds before an unanswered chunk upload marks the server DOWN")
         p.add_argument("--hb-miss", type=int, default=3)
         p.add_argument("--sdn-sock", default=SDN_SOCK, help="controller socket (UNIX)")
         p.add_argument("--sdn-host", default="h1", help="this client's host name in the topology")
@@ -487,7 +493,8 @@ def main():
         return 0
 
     sdn = None if a.no_sdn else SdnLink(a.sdn_sock, a.sdn_host)
-    bk = Backup(parse_servers(a.servers), a.workers, a.sticky, a.hb_interval, a.hb_miss, sdn)
+    bk = Backup(parse_servers(a.servers), a.workers, a.sticky, a.hb_interval, a.hb_miss, sdn,
+                a.put_timeout)
     if a.cmd == "backup":
         return 0 if bk.backup(a.file, a.chunk_size) else 1
     return 0 if bk.restore(a.file_id, a.out) else 1
