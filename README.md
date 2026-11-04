@@ -56,6 +56,16 @@ Any file, including video	     Chunked as raw bytes; the restored video keeps it
 Dashboard	                     One tile per chunk with hover details, PRIMARY / STANDBY status,live topology, throughput chart, event log.
 CSV export	                     Results, events and the chunk map, ready for graphs in the report.
 ________________________________________
+**Technology Stack**
+Python 3
+TCP Sockets
+SHA-256
+Mininet
+Open vSwitch
+POX Controller
+OpenFlow 1.0
+Tkinter Dashboard
+Linux (Ubuntu)
 
 **3. Architecture**
 Architecture
