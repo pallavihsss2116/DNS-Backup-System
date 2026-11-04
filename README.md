@@ -298,7 +298,7 @@ NARUN PATIL
 - Failure recovery mechanisms
 
   ## final demo
-  ![final demo](final demo.mp4)
+  [▶ Watch Final Demo Video](./final%20demo.mp4)
   
 
 
