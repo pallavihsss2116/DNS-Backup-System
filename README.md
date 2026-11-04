@@ -141,7 +141,7 @@ controller/multipath_controller.py is a POX component using OpenFlow 1.0.
 •	Reroute. On link-down, only flows that used the link are deleted; the next packet triggers a new path, and the time from link-down to the new path is logged in              milliseconds.
 •	Socket API. A UNIX socket (/tmp/sdnbackup/sdn.sock, one JSON line each way). reach returns the path, hop count and busiest-link utilisation to each server, or               reachable: false. status returns links and utilisation. Mininet hosts share the filesystem with the controller, so h1 reaches it with no network configuration.
 ________________________________________
-
+![Project output](sdn_out.jpeg)
 **7. The dashboard**
 
 dashboard/app.py (Tkinter) tails the shared event log and updates only what changed, so thousands of chunks stay smooth.
@@ -162,6 +162,7 @@ Blue	    Verified during restore
 •	Result banner: the same facts as the Mininet box (Checksum Verified, time taken, throughput).
 •	Buttons: Backup, Interrupt, Resume, Restore, Play restored, Kill h3, Start h3/h2, Link DOWN / UP, Freeze h3, Arm auto-crash, Cut h3 cable, Export CSV (results, events,      chunks).
 ________________________________________
+![Project output](dashboard.jpeg)
 
 **8. Requirements covered**
 Requirement	                                 How this project meets it          	                         Where
