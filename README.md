@@ -19,9 +19,26 @@ ________________________________________
 12.	Project structure
 13.	Testing
 14.	Design decisions, limitations and future work
-15.	Team and contrubutions
-16.	vedio demo
+15.	vedio demo
 ________________________________________
+**Team members and Contributions**
+CONTRIBUTIONS.md
+
+PALLAVI  H S
+- Backup client implementation
+- Chunking and resume functionality
+- Testing and documentation
+
+PRAKRUTHI R
+- Dashboard development
+- Visualization and CSV export
+- UI testing
+
+NARUN PATIL
+- SDN controller implementation
+- Mininet topology setup
+- Failure recovery mechanisms
+- 
 **1. Overview**
 
 **Problem.**
@@ -292,23 +309,7 @@ UNIX socket for the controller API						Works from inside a Mininet host with no
 virtual-IP failover handled entirely by the controller, QoS for backup traffic, encryption per chunk, de-duplication by chunk hash, more than two servers with a configurable replication factor.
 ________________________________________
 
-**15. Team members and Contributions**
-CONTRIBUTIONS.md
 
-PALLAVI  H S
-- Backup client implementation
-- Chunking and resume functionality
-- Testing and documentation
-
-PRAKRUTHI R
-- Dashboard development
-- Visualization and CSV export
-- UI testing
-
-NARUN PATIL
-- SDN controller implementation
-- Mininet topology setup
-- Failure recovery mechanisms
 
   ## final demo
  [▶ Watch Final Demo Video](./final-demo.mp4)
