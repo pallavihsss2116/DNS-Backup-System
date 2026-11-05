@@ -46,7 +46,7 @@ Black box	                    Live dashboard: one tile per chunk, servers, topol
 ________________________________________
 **2. Highlights**
 	
-Automatic failover h3 to h2	     Detected by heartbeat, by connection errors, and by the  
+Automatic failover h3 to h2	     Detected by time out error, by connection errors, and by the  
                                  controller  reporting "no path". Stuck chunks are aborted and re-sent.
 Natural failures, not only Kill	 h3 crashes by itself, h3 freezes (hangs), h3 cable cut, both pathscut. Kill h3 stays as the challenging scenario.
 Interrupt and Resume	         Stop a transfer halfway and continue later; only missing chunks  are sent.
